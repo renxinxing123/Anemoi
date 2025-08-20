@@ -68,7 +68,7 @@ Run the experiment:
 
 ```
 cd ..
-./gradlew run --console=plain -PmainClass=org.coralprotocol.coralserver.gaia.GaiaKt
+./gradlew run --console=plain
 ```
 
 

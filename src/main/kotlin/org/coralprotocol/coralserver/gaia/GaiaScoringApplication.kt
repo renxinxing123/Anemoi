@@ -369,9 +369,9 @@ suspend fun main(args: Array<String>) {
             }
         }.awaitAll()
 
-        File("coral-GAIA/answers.json").writeText(Json.encodeToString(results))
+        File("Anemoi/answers.json").writeText(Json.encodeToString(results))
         val json = Json.encodeToString(questionAnswerPairs)
-        File("coral-GAIA/results+${System.currentTimeMillis()}.json").writeText(json)
+        File("Anemoi/results+${System.currentTimeMillis()}.json").writeText(json)
         saveReport()
         server.stop()
     }

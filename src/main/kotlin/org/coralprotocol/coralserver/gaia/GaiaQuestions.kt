@@ -27,7 +27,7 @@ data class GaiaQuestion(
     // TODO: Change to /test/ or /validation/ based on the context
     @Transient
     val file: VerifiedExistingFile? =
-        if (fileName.isNotEmpty()) File("coral-GAIA/data/gaia/2023/${GaiaConfig.gaiaQuestionSet.setId}/$fileName")
+        if (fileName.isNotEmpty()) File("Anemoi/data/gaia/2023/${GaiaConfig.gaiaQuestionSet.setId}/$fileName")
             .takeIf { it.exists() }
             ?: throw IllegalArgumentException("File does not exist: $fileName") else null
 }

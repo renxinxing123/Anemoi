@@ -102,7 +102,7 @@ tasks.named<JavaExec>("run") {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "org.coralprotocol.coralserver.MainKt"
+        attributes["Main-Class"] = "org.coralprotocol.coralserver.gaia.GaiaScoringApplicationKt"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
