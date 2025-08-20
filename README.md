@@ -6,7 +6,7 @@ Unlike traditional **context-engineering + centralized** paradigms, Anemoi intro
 🌬️ *Like winds connecting distant lands, Anemoi enables agents to communicate directly in a semi-centralized network, achieving scalable coordination and seamless information flow.*
 
 <p align="center">
-  <img src="Anemoi/images/Anemoi_concept.png" alt="Anemoi Concept" width="70%">
+  <img src="Anemoi/images/Anemoi_semi.png" alt="Anemoi Concept" width="70%">
 </p>
 
 ---
