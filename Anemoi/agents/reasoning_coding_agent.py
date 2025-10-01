@@ -14,7 +14,7 @@ from camel.toolkits import (
     FunctionTool
 )
 
-from utils.config import get_model, get_worker_model, get_image_model, get_audio_model
+from utils.config import get_model, get_worker_model, get_image_model, get_audio_model, get_reasoning_worker_model
 from utils.task_information import get_task_information_context
 from utils.agent_factory import create_agent, setup_mcp_toolkit, run_agent_loop
 from dotenv import load_dotenv
@@ -38,16 +38,20 @@ def get_system_message(tools_description_str: str) -> str:
     """Get the system message for the reasoning_coding_agent."""
     return f"""
     ===== RULES OF REASONING CODING AGENT =====
-    You are an advanced `reasoning_coding_agent` powered by reasoning and coding capabilities and working within the Coral server ecosystem.
+    You are an advanced `reasoning_coding_agent` powered by reasoning, coding and running code script capabilities and working within the Coral server ecosystem.
 
     Core Capabilities:
     1. Reasoning and Coding
-       - Call `reasoning_coding_assistant` to approach all reasoning and coding-based tasks.
-    
+       - Call `reasoning_coding_assistant` to approach all reasoning and coding-based tasks (You should NEVER do any reasoning or coding based tasks by yourself).
+       - Before every time you Call `reasoning_coding_assistant` to approach any reasoning and coding-based tasks, you must first - Send a message to all agents Send a message to all agents from the result of list_agents to confirm you will start. to confirm you will start.
+       - Send results of reasoning and coding-based tasks to all agents after you get it.
+
     2. Agent Communication:
        - Use list_agents to check available agents
        - Use wait_for_mentions to receive messages
-       - Use chat tools to communicate with the other agent
+       - Use chat tools to communicate with the other agent, you must put all agents' names you want to message to into the parameter "mention".
+       - If an agent has confirmed it is ready to start something, you must keep calling `wait_for_agent_messages('timeoutMs': 1800)` until it replies back to you, 
+         and during this period you must never send any reminder or follow-up message to urge it.
     
     If you simply need more information, don't overthink it, just ask other agents for help then try again when they respond.
 
@@ -66,7 +70,7 @@ def create_reasoning_coding_assistant():
             such as requests, BeautifulSoup, re, pandas, etc, to solve the task. For processing excel files, you should write codes to process them.
             """
 
-    model = get_worker_model()
+    model = get_reasoning_worker_model()
 
     document_processing_toolkit = DocumentProcessingToolkit(cache_dir="tmp")
     code_runner_toolkit = CodeExecutionToolkit(sandbox="subprocess", verbose=True)
@@ -141,7 +145,7 @@ async def main():
     print("Initializing reasoning_coding_agent...")
 
     agent_id_param = "reasoning_coding_agent"
-    agent_description = "This agent is a helpful assistant that specializes in reasoning, coding, and processing excel files. However, it cannot access the internet to search for information. If the task requires python execution, it should be informed to execute the code after writing it."
+    agent_description = "This agent is a helpful assistant that specializes in reasoning, coding, running code script and processing excel files. However, it cannot access the internet to search for information. If the task requires python execution, it should be informed to execute the code after writing it."
 
     # Setup MCP toolkit
     connected_mcp_toolkit = await setup_mcp_toolkit(agent_id_param, agent_description)
@@ -156,7 +160,7 @@ async def main():
             agent_id=agent_id_param,
             # initial_prompt=initial_prompt,
             loop_prompt=get_user_message() + "(You are reasoning_coding_agent)",
-            max_iterations=10,
+            max_iterations=100,
             sleep_time=5
         )
 

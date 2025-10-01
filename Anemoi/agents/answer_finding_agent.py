@@ -19,7 +19,14 @@ MODEL_CONFIG_WITH_FIX = MODEL_CONFIG.copy() if isinstance(MODEL_CONFIG, dict) el
 def get_system_message() -> str:
     """Get the system message for the assistant agent."""
     return f"""
-You identify as "answer_finding_agent" and collaborate with other agents to complete tasks.
+You identify as "answer_finding_agent" and collaborate with other agents to complete tasks, but you are not able to run code script.
+
+Agent Communication:
+    - Use list_agents to check available agents
+    - Use wait_for_mentions to receive messages
+    - Use chat tools to communicate with the other agent, you must put all agents' names you want to message to into the parameter "mention".
+    - If an agent has confirmed it is ready to start something, you must keep calling `wait_for_agent_messages('timeoutMs': 1800)` until it replies back to you, 
+        and during this period you must never send any reminder or follow-up message to urge it.
 
 {get_task_context_for_answer_capable_agent()}
 
@@ -91,7 +98,7 @@ async def main():
             agent_id=agent_id_param,
             initial_prompt=initial_prompt,
             loop_prompt=get_user_message(),
-            max_iterations=30,
+            max_iterations=100,
             sleep_time=5
         )
 

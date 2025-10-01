@@ -658,9 +658,9 @@ def extract_meaningful_json(response_json: str) -> Dict[str, Any]:
 
             # Extract message content if it's not empty
             if "message" in choice and "content" in choice["message"]:
-                content = choice["message"]["content"].strip()
-                if content:  # Only include if not empty
-                    result["content"] = content
+                ct = choice["message"].get("content")
+                if ct is not None and ct.strip():
+                    result["content"] = ct.strip()
 
             # Extract tool calls
             if "message" in choice and "tool_calls" in choice["message"] and choice["message"]["tool_calls"] is not None:

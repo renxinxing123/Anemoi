@@ -139,8 +139,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': str(video_template),
-            'force_generic_extractor': True,
-            'cookiefile': self._cookies_path,
+            'cookiesfrombrowser': ('chrome',),
         }
 
         try:

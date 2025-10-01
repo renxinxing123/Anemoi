@@ -18,7 +18,7 @@ def get_system_message() -> str:
     return f"""
     ===== RULES OF PLANNING AGENT =====
     You are a specialized planning agent responsible for coordinating complex tasks.
-    You identify as "planning_agent" and work with the other agents through the Coral server.
+    You identify as "planning_agent" and work with the other agents through the Coral server, but you are not able to run code script.
 
     Core Responsibilities:
     1. Task Planning:
@@ -30,11 +30,13 @@ def get_system_message() -> str:
     2. Agent Communication:
        - Use list_agents to check available agents
        - Use wait_for_mentions to receive messages
-       - Use chat tools to communicate with the other agent
+       - Use chat tools to communicate with the other agent, you must put all agents' names you want to message to into the parameter "mention".
+       - If an agent has confirmed it is ready to start something, you must keep calling `wait_for_agent_messages('timeoutMs': 1800)` until it replies back to you, 
+         and during this period you must never send any reminder or follow-up message to urge it.
 
     3. Task Coordination:
-       - Provide step-by-step instructions to the web agent
-       - Monitor the web agent's progress
+       - Provide step-by-step instructions agents
+       - Monitor the web agents' progress
        - Handle task deviations and errors
        - Ensure task completion
     
@@ -120,7 +122,7 @@ async def create_planning_agent(
     return agent
 
 async def run_planning_agent(
-    max_iterations: int = 20,
+    max_iterations: int = 100,
     sleep_time: int = 10,
 ):
     """Run the planning agent."""
@@ -150,12 +152,11 @@ async def run_planning_agent(
 
         # Initial prompt
         initial_prompt = f"[automated]this is a pre-recorded message/instruction. Begin planning with other agents to achieve our task/answer our query described earlier. " \
-                            f"Create a thread with all agents initially to keep the team aligned, if you don't think an agent will be needed" \
-                            f" don't add them. Err on the side of adding an agent to the thread if you're unsure" \
-                             f"At the start you should analyze the instructions to figure out exactly what is needed." \
+                            f"Call list_agents then Create a thread with all agents initially to keep the team aligned" \
+                            f"At the start you should analyze the instructions to figure out exactly what is needed." \
                             f"You should start by identifying the unit and formatting to assume. For example, if the instructions specify to give it in 10s of kilometres, and you eventually find the answer to be 155km, the output should just be '15.5', and you should communicate this to the others." \
-                            f"Share the task phrasing verbatim before starting to break it down for the team to work on it. You can share it in a code block, as messages support multiple lines." \
-                            f"From now you will be on a loop and not receive further instructions from 'me'." \
+                            f"Share the task phrasing verbatim before starting to break it down for the team to work on it. You can share it in a code block, as messages support multiple lines. You must put all agents' names into the parameter 'mention' in this step." \
+                            f"" \
                             f"For reference, here is the instructions you were given, remember to share it with the others: {os.getenv('TASK_INSTRUCTION', 'No instructions provided')}\n"
 
 

@@ -21,7 +21,7 @@ def get_system_message() -> str:
     return f"""
     ===== RULES OF CRITIQUE AGENT =====
     You are a specialized critique agent responsible for continuously questioning other agents' contributions to ensure they are really certain about their statements and conclusions.
-    You identify as "critique_agent" and work with other agents through the Coral server.
+    You identify as "critique_agent" and work with other agents through the Coral server, but you are not able to run code script.
 
     Core Responsibilities:
     1. Critical Questioning:
@@ -33,7 +33,9 @@ def get_system_message() -> str:
     2. Agent Communication:
        - Use list_agents to check available agents
        - Use wait_for_mentions to receive messages
-       - Use chat tools to communicate with other agents
+       - Use chat tools to communicate with the other agent, you must put all agents' names you want to message to into the parameter "mention".
+       - If an agent has confirmed it is ready to start something, you must keep calling `wait_for_agent_messages('timeoutMs': 1800)` until it replies back to you, 
+         and during this period you must never send any reminder or follow-up message to urge it.
 
     3. Quality Assurance:
        - Ensure all claims are backed by evidence
@@ -111,7 +113,7 @@ async def create_critique_agent(
     return agent
 
 async def run_critique_agent(
-    max_iterations: int = 20,
+    max_iterations: int = 100,
     sleep_time: int = 10,
 ):
     """Run the critique agent."""

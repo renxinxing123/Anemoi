@@ -133,7 +133,7 @@ async def run_agent_loop(
         max_iterations: Maximum number of iterations
         sleep_time: Time to sleep between iterations
     """
-    max_iterations = 20
+    max_iterations = max_iterations
     # Send initial prompt if provided
     if initial_prompt:
         print(f"Sending initial prompt to {agent_id}...")

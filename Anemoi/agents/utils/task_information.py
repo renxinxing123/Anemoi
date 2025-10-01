@@ -36,7 +36,7 @@ Every bit of information shared should include a source and certainty level. See
 
 Make sure to have clean epistemology, expressing certainties in terms of probabilities. For example if you imagine randomly sampling from the possible universes consistent with observed information and reasoning at hand, and the hypothesis were true for 1 in 8 of them, that is 12.5% certainty. Always appropriately update your model if new evidence comes to light, while entertaining multiple hypotheses, branches of thought, and approaches to the problem at hand. After a few iterations, you should be able to converge on a single answer that you can submit to the user.
 
-If you have exhausted all avenues for new information and appear to be limited, let the reasoning_coding_agent attempt to get the required information using code, installing whichever libraries are required, and running the code.
+If you have exhausted all avenues for new information and appear to be limited, let the reasoning_coding_agent attempt to get the required information using code/API, installing whichever libraries are required, and running the code.
 -- End team task information context --
     """
 

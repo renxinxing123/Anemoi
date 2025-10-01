@@ -28,26 +28,6 @@ import asyncio
 import nest_asyncio
 nest_asyncio.apply()
 
-# ---- 放在 module 顶部：顶层 worker，保证可被子进程 import / pickle ----
-def _firecrawl_worker(q, url: str, api_key: str, limit: int, formats, poll_interval: int):
-    """
-    Top-level worker for multiprocessing.
-    NOTE: must be at module scope (not inside a class/method) to be picklable.
-    """
-    import traceback
-    try:
-        from firecrawl import FirecrawlApp
-        app = FirecrawlApp(api_key=api_key)
-        data = app.crawl_url(
-            url,
-            params={"limit": limit, "scrapeOptions": {"formats": formats}},
-            poll_interval=poll_interval,
-        )
-        q.put(("ok", data))
-    except Exception as e:
-        q.put(("err", f"{e}\n{traceback.format_exc()}"))
-
-
 
 class DocumentProcessingToolkit(BaseToolkit):
     r"""A class representing a toolkit for processing document and return the content of the document.
@@ -375,82 +355,59 @@ Query:
         soup = BeautifulSoup(html_content, 'html.parser')
         extracted_text = soup.get_text()
         return extracted_text
+    
 
-    # ---- 你的方法里调用：不会再出现 “Can't get local object ... <locals>” ----
-    from retry import retry
-
-    @retry((RuntimeError,), tries=1, delay=10, backoff=2, max_delay=120)
+    @retry(RuntimeError, tries=3, delay=60, backoff=2, max_delay=120)
     def _extract_webpage_content(self, url: str) -> str:
-        import os, time, logging
-        from multiprocessing import get_context
-        logger = logging.getLogger(__name__)
+        api_key = os.getenv("FIRECRAWL_API_KEY")
+        from firecrawl import FirecrawlApp
 
-        LIMIT = 1
-        FORMATS = ["markdown"]
-        POLL_INTERVAL = 1
-        HARD_TIMEOUT = 60
-        API_KEY = os.getenv("FIRECRAWL_API_KEY")
+        # Initialize the FirecrawlApp with your API key
+        app = FirecrawlApp(api_key=api_key)
 
-        mp = get_context("spawn")  # 跨平台稳妥
-        q = mp.Queue(maxsize=1)
-        p = mp.Process(
-            target=_firecrawl_worker,   # 顶层函数！
-            args=(q, url, API_KEY, LIMIT, FORMATS, POLL_INTERVAL),
-            daemon=False,
-        )
-        p.start()
-
-        start = time.monotonic()
-        got = None
         try:
-            while time.monotonic() - start < HARD_TIMEOUT:
-                if not q.empty():
-                    got = q.get()
-                    break
-                if not p.is_alive():
-                    break
-                time.sleep(0.2)
-        finally:
-            if p.is_alive():
-                p.terminate()
-            p.join(timeout=2)
-
-        if got is None:
-            logger.error(f"Firecrawl crawl_url hard-timeout after {HARD_TIMEOUT}s: {url}")
-            raise RuntimeError(f"Firecrawl crawl_url timed out after {HARD_TIMEOUT}s")
-
-        status, payload = got
-        s = str(payload)
-        if status == "err":
-            if "403" in s:
-                logger.error(f"Error: {s}")
-                return s
-            elif "429" in s:
-                logger.error(f"Error: {s}")
-                raise RuntimeError(f"Error: {s}")
-            elif "Payment Required" in s:
-                logger.error(f"Error: {s}")
+            data = app.crawl_url(
+                url,
+                params={
+                'limit': 1,
+                'scrapeOptions': {'formats': ['markdown']}
+            }
+        )
+            
+        except Exception as e:
+            if '403' in str(e):
+                logger.error(f"Error: {e}")
+                return e
+            elif "429" in str(e):
+                # too many requests
+                logger.error(f"Error: {e}")
+                raise RuntimeError(f"Error: {e}")
+            
+            elif "Payment Required" in str(e):
+                logger.error(f"Error: {e}")
                 extracted_text = self._extract_webpage_content_with_html2text(url)
                 logger.debug(f"The extracted text from html2text is: {extracted_text}")
                 return extracted_text
             else:
-                raise RuntimeError(s)
+                raise e
 
-        data = payload
-        logger.debug(f"Extracted data from {url} using firecrawl (via child process): {str(data)[:5000]}")
-
-        if not data.get("data"):
-            if data.get("success") is True:
-                logger.debug("Trying to use html2text to get the text.")
+        logger.debug(f"Extracted data from {url} using firecrawl: {data}")
+        if len(data['data']) == 0:
+            if data['success'] == True:
+                logger.debug(f"Trying to use html2text to get the text.")
+                # try using html2text to get the text
                 extracted_text = self._extract_webpage_content_with_html2text(url)
                 logger.debug(f"The extracted text from html2text is: {extracted_text}")
-                return extracted_text or "No content found on the webpage."
+                
+                if len(extracted_text) == 0:
+                    return "No content found on the webpage."
+                else:
+                    return extracted_text
+
             else:
                 return "Error while crawling the webpage."
 
-        return str(data["data"][0].get("markdown", ""))
-
-
+        return str(data['data'][0]['markdown'])
     
 
     def _download_file(self, url: str):

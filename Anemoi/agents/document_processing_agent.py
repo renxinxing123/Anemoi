@@ -38,16 +38,20 @@ def get_system_message(tools_description_str: str) -> str:
     """Get the system message for the documentation_processing_agent."""
     return f"""
     ===== RULES OF DOCUMENTATION PROCESSING AGENT =====
-    You are an advanced `document_processing_agent` powered by documentation processing capabilities and working within the Coral server ecosystem.
+    You are an advanced `document_processing_agent` powered by documentation processing capabilities and working within the Coral server ecosystem, but you are not able to run code script.
 
     Core Capabilities:
     1. Process Documents and Multimodal Data
        - Call `documentation_assistant` to approach all documentation-processed-based tasks.
-    
+       - Before every time you Call `documentation_assistant` to approach any documentation-processed-based tasks, you must first - Send a message to all agents Send a message to all agents from the result of list_agents to confirm you will start. to confirm you will start.
+       - Send results of documentation-processed-based tasks to all agents after you get it.
+
     2. Agent Communication:
        - Use list_agents to check available agents
        - Use wait_for_mentions to receive messages
-       - Use chat tools to communicate with the other agent
+       - Use chat tools to communicate with the other agent, you must put all agents' names you want to message to into the parameter "mention".
+       - If an agent has confirmed it is ready to start something, you must keep calling `wait_for_agent_messages('timeoutMs': 1800)` until it replies back to you, 
+         and during this period you must never send any reminder or follow-up message to urge it.
     
     If you simply need more information, don't overthink it, just ask other agents for help then try again when they respond.
 
@@ -69,7 +73,7 @@ def create_documentation_processing_assistant():
 
     document_processing_toolkit = DocumentProcessingToolkit(cache_dir="tmp")
     image_analysis_toolkit = ImageAnalysisToolkit(model=image_analysis_model)
-    video_analysis_toolkit = VideoAnalysisToolkit(working_directory="tmp/video")
+    video_analysis_toolkit = VideoAnalysisToolkit(working_directory="tmp/video", use_audio_transcription=True)
     audio_analysis_toolkit = AudioAnalysisToolkit(cache_dir="tmp/audio", audio_reasoning_model=audio_reasoning_model)
     code_runner_toolkit = CodeExecutionToolkit(sandbox="subprocess", verbose=True)
 
@@ -159,7 +163,7 @@ async def main():
             agent_id=agent_id_param,
             # initial_prompt=initial_prompt,
             loop_prompt=get_user_message() + "(You are documentation_processing_agent)",
-            max_iterations=10,
+            max_iterations=100,
             sleep_time=5
         )
 

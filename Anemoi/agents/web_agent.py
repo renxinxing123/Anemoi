@@ -38,16 +38,20 @@ def get_system_message(tools_description_str: str) -> str:
     """Get the system message for the web agent."""
     return f"""
     ===== RULES OF WEB AGENT =====
-    You are an advanced `web_agent` powered by web browsing/searching capabilities and working within the Coral server ecosystem.
+    You are an advanced `web_agent` powered by web browsing/searching capabilities and working within the Coral server ecosystem, but you are not able to run code script. 
 
     Core Capabilities:
     1. Web Browsing and Searching 
        - Call `web_assistant` to approach all web-based tasks.
+       - Before every time you Call `web_assistant` to approach any web-based tasks, you must first - Send a message to all agents from the result of list_agents to confirm you will start.
+       - Send results of web-based tasks to all agents after you get it.
     
     2. Agent Communication:
        - Use list_agents to check available agents
        - Use wait_for_mentions to receive messages
-       - Use chat tools to communicate with the other agent
+       - Use chat tools to communicate with the other agent, you must put all agents' names you want to message to into the parameter "mention".
+       - If an agent has confirmed it is ready to start something, you must keep calling `wait_for_agent_messages('timeoutMs': 1800)` until it replies back to you, 
+         and during this period you must never send any reminder or follow-up message to urge it.
     
     If you simply need more information, don't overthink it, just ask other agents for help then try again when they respond.
 
@@ -85,7 +89,7 @@ async def create_web_assistant():
 
     search_toolkit = SearchToolkit()
     document_processing_toolkit = DocumentProcessingToolkit(cache_dir="tmp")
-    video_analysis_toolkit = VideoAnalysisToolkit(working_directory="tmp/video")
+    video_analysis_toolkit = VideoAnalysisToolkit(working_directory="tmp/video", use_audio_transcription=True)
     browser_simulator_toolkit = AsyncBrowserToolkit(headless=True, cache_dir="tmp/browser", planning_agent_model=web_planning_model, web_agent_model=web_model)
 
     tools=[
@@ -169,7 +173,7 @@ async def main():
             agent_id=agent_id_param,
             # initial_prompt=initial_prompt,
             loop_prompt=get_user_message() + "(You are web_agent)",
-            max_iterations=10,
+            max_iterations=100,
             sleep_time=5
         )
 
